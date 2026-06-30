@@ -76,7 +76,7 @@ public class CourseController {
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<CourseResponse>> updateStatus(@PathVariable Long id, @RequestParam CourseStatus courseStatus){
+    public ResponseEntity<ApiResponse<CourseResponse>> updateStatus(@PathVariable Long id,@Valid @RequestParam CourseStatus courseStatus){
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
                 "Cập nhập trạng thái khóa học thành công",
@@ -117,7 +117,7 @@ public class CourseController {
     }
 
     @PostMapping("/{courseId}/lessons")
-    public ResponseEntity<ApiResponse<LessonResponse>> createLesson(@PathVariable Long courseId, @RequestBody LessonCreateRequest lessonRequest) {
+    public ResponseEntity<ApiResponse<LessonResponse>> createLesson(@PathVariable Long courseId,@Valid @RequestBody LessonCreateRequest lessonRequest) {
        return new ResponseEntity<>(new ApiResponse<>(
                true,
                "Tạo bài học thành công",

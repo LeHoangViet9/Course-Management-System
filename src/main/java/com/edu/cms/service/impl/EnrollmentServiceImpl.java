@@ -15,6 +15,7 @@ import com.edu.cms.mapper.EnrollmentMapper;
 import com.edu.cms.repository.CourseRepository;
 import com.edu.cms.repository.EnrollmentRepository;
 import com.edu.cms.repository.LessonRepository;
+import com.edu.cms.repository.UserRepository;
 import com.edu.cms.service.EnrollmentService;
 import com.edu.cms.common.utils.PageUtils;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final EnrollmentRepository enrollmentRepository;
     private final CourseRepository courseRepository;
     private final LessonRepository lessonRepository;
+    private final UserRepository userRepository;
     private final EnrollmentMapper enrollmentMapper;
     private final PageUtils pageUtils;
 
@@ -60,12 +62,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             throw new ConfilictException("Bạn đã đăng kí khóa học này");
         }
 
+        User student = userRepository.findById(customUserDetail.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin tài khoản"));
+
         Enrollment enrollment = Enrollment.builder()
-                .student(User.builder().id(customUserDetail.getId()).build())
+                .student(student)
                 .course(course)
                 .status(EnrollmentStatus.ENROLLED)
                 .progressPercentage(BigDecimal.ZERO)
                 .build();
+
         Enrollment saved = enrollmentRepository.save(enrollment);
         return enrollmentMapper.toResponse(saved);
     }

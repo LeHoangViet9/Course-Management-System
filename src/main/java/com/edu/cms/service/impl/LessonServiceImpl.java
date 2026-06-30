@@ -23,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 
 @Service
@@ -37,30 +38,45 @@ public class LessonServiceImpl implements LessonService {
     @Override
     @Transactional(readOnly = true)
     public LessonResponse getLessonById(Long lessonId) {
-        Lesson lesson=lessonRepository.findById(lessonId).orElseThrow(()->new ResourceNotFoundException("Không tìm thấy bài học"));
-        
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài học"));
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new ForbiddenException("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn");
         }
+
         CustomUserDetail currentUser = (CustomUserDetail) authentication.getPrincipal();
-        
-        boolean isAdminOrTeacher = currentUser.getRole() == UserRole.ADMIN 
-                || (lesson.getCourse().getTeacher() != null && lesson.getCourse().getTeacher().getId().equals(currentUser.getId()));
-        
+        if (currentUser == null) {
+            throw new ForbiddenException("Thông tin người dùng không hợp lệ");
+        }
+
+        boolean isAdmin = currentUser.getAuthorities() != null && currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
+
+        boolean isTeacherOfCourse = false;
+        if (lesson.getCourse() != null && lesson.getCourse().getTeacher() != null && currentUser.getId() != null) {
+            isTeacherOfCourse = lesson.getCourse().getTeacher().getId().equals(currentUser.getId());
+        }
+
+        boolean isAdminOrTeacher = isAdmin || isTeacherOfCourse;
+
         if (Boolean.FALSE.equals(lesson.getIsPublished())) {
             if (!isAdminOrTeacher) {
                 throw new ForbiddenException("Bài học này chưa được kích hoạt hiển thị");
             }
         }
-        
+
         if (!isAdminOrTeacher) {
+            if (lesson.getCourse() == null) {
+                throw new ResourceNotFoundException("Bài học này không thuộc về khóa học nào");
+            }
             boolean isEnrolled = enrollmentRepository.existsByStudentIdAndCourseId(currentUser.getId(), lesson.getCourse().getId());
             if (!isEnrolled) {
                 throw new ForbiddenException("Bạn cần đăng ký khóa học này để xem nội dung bài học");
             }
         }
-        
+
         return lessonMapper.toResponse(lesson);
     }
 

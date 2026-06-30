@@ -23,10 +23,10 @@ public class CustomUserDetailService implements UserDetailsService {
         User users = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Không tồn tại emaik: " + email));
 
         return CustomUserDetail.builder()
+                .id(users.getId())
                 .email(users.getEmail())
                 .passwordHash(users.getPasswordHash())
                 .fullName(users.getFullName())
-                .email(users.getEmail())
                 .isActive(users.getIsActive())
                 .authorities(mapToGrandAuthority(users.getRole()))
                 .build();

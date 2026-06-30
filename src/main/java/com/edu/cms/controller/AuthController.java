@@ -31,7 +31,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> register(@Valid @RequestBody UserLoginRequest user){
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody UserLoginRequest user){
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
                 "Đăng nhập thành công",
@@ -42,7 +42,7 @@ public class AuthController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<ApiResponse<VerifyTokenResponse>> register(@Valid @RequestParam String token){
+    public ResponseEntity<ApiResponse<VerifyTokenResponse>> verify(@Valid @RequestParam String token){
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
                 "Xác thực thành công",

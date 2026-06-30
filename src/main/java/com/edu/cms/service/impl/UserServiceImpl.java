@@ -123,7 +123,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse updateUser(Long id,UpdateUserRequest updateUserRequest) {
-        User user=userRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Không tìm thấy người dùng"));
+        CustomUserDetail customUserDetail = (CustomUserDetail) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user=userRepository.findById(customUserDetail.getId()).orElseThrow(()-> new ResourceNotFoundException("Không tìm thấy người dùng"));
         user.setFullName(updateUserRequest.getFullName());
         user.setUpdatedAt(LocalDateTime.now());
        User saved= userRepository.save(user);

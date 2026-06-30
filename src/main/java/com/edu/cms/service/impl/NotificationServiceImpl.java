@@ -62,11 +62,18 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void deleteNotification(Long id) {
-        Notification notification=notificationRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Không tìm thấy thông báo"));
-         CustomUserDetail currentUser = (CustomUserDetail) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-         if (!notification.getUser().getId().equals(currentUser.getId())) {
-             throw new ForbiddenException("Bạn không có quyền xóa thông báo này");
-         }
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông báo"));
+
+        CustomUserDetail currentUser = (CustomUserDetail) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        boolean isAdmin = currentUser.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!notification.getUser().getId().equals(currentUser.getId()) && !isAdmin) {
+            throw new ForbiddenException("Bạn không có quyền xóa thông báo này");
+        }
+
         notificationRepository.delete(notification);
     }
 

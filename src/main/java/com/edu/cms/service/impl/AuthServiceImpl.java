@@ -43,33 +43,22 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(UserLoginRequest request) {
 
-        User user = userRepository.findByEmail(
-                request.getEmail()
-        ).orElseThrow(() ->
+        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() ->
                 new ResourceNotFoundException(
                         "Email không tồn tại"));
 
-        if (!passwordEncoder.matches(
-                request.getPassword(),
-                user.getPasswordHash())) {
-
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new UnauthorizedException(
                     "Email hoặc mật khẩu sai");
         }
 
         if (!user.getIsActive()) {
-
-            throw new ForbiddenException(
-                    "Vui lòng xác thực email trước khi đăng nhập");
+            throw new ForbiddenException("Vui lòng xác thực email trước khi đăng nhập");
         }
 
-        String accessToken =
-                jwtTokenProvider.generateToken(
-                        user.getEmail());
+        String accessToken = jwtTokenProvider.generateToken(user.getEmail());
 
-        RefreshToken refreshToken =
-                refreshTokenService.createRefreshToken(
-                        user.getEmail());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getEmail());
 
         return LoginResponse.builder()
                 .accessToken(accessToken)

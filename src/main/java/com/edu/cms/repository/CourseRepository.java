@@ -17,10 +17,10 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     boolean existsByTitle(String title);
 
 
-
     @Query("SELECT c FROM Course c WHERE " +
-            "(:search IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(c.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "(:search IS NULL OR " +
+            " LOWER(c.title) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR " +
+            " LOWER(c.description) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) ) " +
             "AND (:teacherId IS NULL OR c.teacher.id = :teacherId) " +
             "AND (:status IS NULL OR c.status = :status)")
     Page<Course> searchAndFilterCourses(

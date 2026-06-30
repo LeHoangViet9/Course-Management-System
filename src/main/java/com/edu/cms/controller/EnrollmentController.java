@@ -6,6 +6,7 @@ import com.edu.cms.dto.enrollment.request.EnrollmentCreateRequest;
 import com.edu.cms.dto.enrollment.response.EnrollmentDetailResponse;
 import com.edu.cms.dto.enrollment.response.EnrollmentResponse;
 import com.edu.cms.service.EnrollmentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,7 @@ public class EnrollmentController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Object>> enrollCourse(@RequestBody EnrollmentCreateRequest request){
+    public ResponseEntity<ApiResponse<Object>> enrollCourse(@Valid @RequestBody EnrollmentCreateRequest request){
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
                 "Đăng kí khóa học thành công",

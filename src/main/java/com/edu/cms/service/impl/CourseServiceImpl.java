@@ -27,6 +27,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,17 +45,25 @@ public class CourseServiceImpl implements CourseService {
     private final UserRepository userRepository;
     private final LessonRepository lessonRepository;
     private final LessonMapper lessonMapper;
-    private final ReviewRepository reviewRepository;
-    private final ReviewMapper reviewMapper;
 
     @Override
     @Transactional(readOnly = true)
-    public Page<CourseSumaryResponse> getCourseSumary(String keyword,Long teacherId,CourseStatus status,Integer page, Integer size, String sortBy, SortDirection direction) {
+    public Page<CourseSumaryResponse> getCourseSumary(String keyword, Long teacherId, CourseStatus status, Integer page, Integer size, String sortBy, SortDirection direction) {
         Pageable pageable = pageUtils.createPageable(page, size, sortBy, direction);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN"));
+
+        if (!isAdmin) {
+            status = CourseStatus.PUBLISHED;
+        }
 
         String cleanWord = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
 
-        Page<Course> course = courseRepository.searchAndFilterCourses(cleanWord, teacherId,status, pageable);
+        Page<Course> course = courseRepository.searchAndFilterCourses(cleanWord, teacherId, status, pageable);
         return course.map(courseMapper::toSummaryResponse);
     }
 

@@ -15,6 +15,7 @@ public class CourseSumaryResponse {
     private String title;
     private BigDecimal price;
     private String status;
+    private String description;
     private String teacherName;
     private Integer totalLessons;
 }

@@ -1,6 +1,8 @@
 package com.edu.cms.service.impl;
 
 import com.edu.cms.common.enums.UserRole;
+import com.edu.cms.common.exception.BadRequestException;
+import com.edu.cms.common.exception.ResourceNotFoundException;
 import com.edu.cms.dto.report.StudentProgressReportResponse;
 import com.edu.cms.dto.report.TeacherReportResponse;
 import com.edu.cms.dto.report.TopCourseReportResponse;
@@ -35,11 +37,13 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public StudentProgressReportResponse getStudentProgress(Long studentId) {
-        User user=userRepository.findById(studentId).orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
-        if(user.getRole() != UserRole.STUDENT){
-            throw new IllegalArgumentException("Không phải tài khoản học viên");
+        User user = userRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản học viên với ID: " + studentId));
+
+        if (user.getRole() != UserRole.STUDENT) {
+            throw new BadRequestException("Tài khoản mang ID " + studentId + " không phải là tài khoản học viên (STUDENT)");
         }
-        
+
         List<Enrollment> enrollments = enrollmentRepository.findAllByStudentId(studentId);
         List<StudentProgressReportResponse.CourseProgressDetail> details = enrollments.stream()
                 .map(e -> new StudentProgressReportResponse.CourseProgressDetail(
@@ -50,11 +54,12 @@ public class ReportServiceImpl implements ReportService {
                 ))
                 .collect(Collectors.toList());
 
-        long totalPage=details.size();
+        long totalPage = details.size();
         double avgProgress = details.stream()
                 .mapToDouble(StudentProgressReportResponse.CourseProgressDetail::getProgressPercentage)
                 .average()
                 .orElse(0.0);
+
         return StudentProgressReportResponse.builder()
                 .studentId(user.getId())
                 .studentName(user.getFullName())
@@ -66,14 +71,19 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public TeacherReportResponse getTeacherOverview(Long teacherId) {
-        User teacher=userRepository.findById(teacherId).orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
-        if(teacher.getRole() != UserRole.TEACHER){
-            throw new IllegalArgumentException("Không phải tài khoản giảng viên");
+        // Làm tương tự cho phần Giảng viên để dễ debug dữ liệu
+        User teacher = userRepository.findById(teacherId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản giảng viên với ID: " + teacherId));
+
+        if (teacher.getRole() != UserRole.TEACHER) {
+            throw new BadRequestException("Tài khoản mang ID " + teacherId + " không phải là tài khoản giảng viên (TEACHER)");
         }
-        long totalCourse=courseRepository.countByTeacherId(teacherId);
-        long totalUniqueStudents=courseRepository.countUniqueStudentsByTeacherId(teacherId);
-        double sumRevenue=  courseRepository.sumRevenueByTeacherId(teacherId);
-        double averageRating= courseRepository.averageRatingByTeacherId(teacherId);
+
+        long totalCourse = courseRepository.countByTeacherId(teacherId);
+        long totalUniqueStudents = courseRepository.countUniqueStudentsByTeacherId(teacherId);
+        double sumRevenue = courseRepository.sumRevenueByTeacherId(teacherId);
+        double averageRating = courseRepository.averageRatingByTeacherId(teacherId);
+
         return TeacherReportResponse.builder()
                 .teacherId(teacher.getId())
                 .teacherName(teacher.getFullName())
