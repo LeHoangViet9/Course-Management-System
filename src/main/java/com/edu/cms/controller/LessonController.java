@@ -5,6 +5,7 @@ import com.edu.cms.dto.lesson.request.LessonUpdateRequest;
 import com.edu.cms.dto.lesson.response.LessonResponse;
 import com.edu.cms.dto.lessonProgress.response.LessonPreviewResponse;
 import com.edu.cms.service.LessonService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +28,7 @@ public class LessonController {
         ),HttpStatus.OK);
     }
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<LessonResponse>> updateLesson(@PathVariable Long id, @RequestBody LessonUpdateRequest lessonUpdateRequest){
+    public ResponseEntity<ApiResponse<LessonResponse>> updateLesson(@PathVariable Long id,@Valid @RequestBody LessonUpdateRequest lessonUpdateRequest){
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
                 "Cập nhật bài học thành công",
@@ -47,17 +48,17 @@ public class LessonController {
                 HttpStatus.OK
         ),HttpStatus.OK);
     }
-    @PutMapping("/{id}/pulish")
-    public ResponseEntity<ApiResponse<LessonResponse>> updatePulishedStatus(@PathVariable Long id, @RequestParam Boolean pulished){
+    @PutMapping("/{id}/publish")
+    public ResponseEntity<ApiResponse<LessonResponse>> updatePulishedStatus(@PathVariable Long id,@Valid @RequestParam Boolean published){
         return new ResponseEntity<>(new ApiResponse<>(
                 true,
                 "Cập nhật bài học thành công",
-                lessonService.updatePublishedStatus(id, pulished),
+                lessonService.updatePublishedStatus(id, published),
                 null,
                 HttpStatus.OK
         ),HttpStatus.OK);
     }
-    @GetMapping("/{id}/preview")
+    @GetMapping("/{id}/content-preview")
     public ResponseEntity<ApiResponse<LessonPreviewResponse>> getLessonPreview(@PathVariable Long id){
         return new ResponseEntity<>(new ApiResponse<>(
                 true,

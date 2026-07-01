@@ -10,5 +10,4 @@ public interface NotificationMapper {
     @Mapping(target = "userId", source = "user.id")
     NotificationResponse toResponse(Notification notification);
 
-    List<NotificationResponse> toResponseList(List<Notification> notifications);
 }

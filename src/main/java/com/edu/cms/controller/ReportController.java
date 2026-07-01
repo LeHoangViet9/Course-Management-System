@@ -29,7 +29,7 @@ public class ReportController {
     }
     @GetMapping("/top-course")
     public ResponseEntity<ApiResponse<List<TopCourseReportResponse>>> getTopCourseReport(
-            @RequestParam Integer limit
+            @RequestParam(name = "limit",defaultValue = "10") Integer limit
     ) {
         return new ResponseEntity<>(new ApiResponse<>(
                 true,

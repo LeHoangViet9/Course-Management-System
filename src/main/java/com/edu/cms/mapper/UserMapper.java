@@ -11,5 +11,4 @@ public interface UserMapper {
 
     UserResponse toResponse(User user);
 
-    List<UserResponse> toResponseList(List<User> users);
 }

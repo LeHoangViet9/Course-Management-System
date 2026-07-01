@@ -92,11 +92,9 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     private boolean hasPermission(Review review, CustomUserDetail currentUser) {
-        // Check xem có phải ADMIN không
         boolean isAdmin = currentUser.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-        // Check xem có phải chính chủ sinh viên viết review đó không
         boolean isOwner = review.getStudent().getId().equals(currentUser.getId());
 
         return isAdmin || isOwner;
