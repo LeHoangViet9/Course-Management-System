@@ -36,21 +36,18 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
             "GROUP BY c.id, c.title, c.teacher.fullName, c.price " +
             "ORDER BY COUNT(e.id) DESC")
     List<TopCourseReportResponse> findTopCoursesByEnrollments(Pageable pageable);
-
+    // 1. Đếm số lượng khóa học của giáo viên
     long countByTeacherId(Long teacherId);
 
     // 2. Đếm tổng số học viên (DUY NHẤT) đã đăng ký các khóa học của giảng viên này
-    // (Dùng DISTINCT để nếu một học viên mua 2 khóa của giảng viên đó thì vẫn chỉ tính là 1 học viên)
     @Query("SELECT COUNT(DISTINCT e.student.id) FROM Enrollment e WHERE e.course.teacher.id = :teacherId")
     long countUniqueStudentsByTeacherId(@Param("teacherId") Long teacherId);
 
     // 3. Tính tổng doanh thu từ các khóa học của giảng viên này
-    // (Nếu chưa có ai mua, hàm SUM sẽ trả về NULL, nên ta dùng COALESCE để ép về số 0.0 tránh bị lỗi)
     @Query("SELECT COALESCE(SUM(c.price), 0.0) FROM Enrollment e JOIN e.course c WHERE c.teacher.id = :teacherId")
     double sumRevenueByTeacherId(@Param("teacherId") Long teacherId);
 
     // 4. Tính điểm đánh giá trung bình (rating) dựa trên tất cả khóa học của giảng viên này
-// Dùng COALESCE để nếu giảng viên chưa có ai đánh giá thì trả về 0.0 thay vì null
     @Query("SELECT COALESCE(AVG(r.rating), 0.0) FROM Review r WHERE r.course.teacher.id = :teacherId")
     double averageRatingByTeacherId(@Param("teacherId") Long teacherId);
 }

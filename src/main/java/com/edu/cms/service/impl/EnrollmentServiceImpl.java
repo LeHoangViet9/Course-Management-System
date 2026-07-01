@@ -116,12 +116,10 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bài học"));
 
-        // Kiểm tra lesson có thuộc course không
         if (!lesson.getCourse().getId().equals(enrollment.getCourse().getId())) {
             throw new IllegalArgumentException("Bài học không thuộc khóa học này");
         }
 
-        // Tìm hoặc tạo LessonProgress
         LessonProgress progress = enrollment.getLessonProgresses().stream()
                 .filter(p -> p.getLesson().getId().equals(lessonId))
                 .findFirst()

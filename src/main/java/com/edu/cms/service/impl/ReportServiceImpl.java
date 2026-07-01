@@ -71,7 +71,6 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public TeacherReportResponse getTeacherOverview(Long teacherId) {
-        // Làm tương tự cho phần Giảng viên để dễ debug dữ liệu
         User teacher = userRepository.findById(teacherId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản giảng viên với ID: " + teacherId));
 

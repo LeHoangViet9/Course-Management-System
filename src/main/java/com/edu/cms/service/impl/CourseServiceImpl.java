@@ -90,7 +90,7 @@ public class CourseServiceImpl implements CourseService {
 
         LocalDateTime now = LocalDateTime.now();
         course.setCreatedAt(now);
-        course.setUpdatedAt(now);
+        course.setUpdatedAt(null);
 
         course.setDescription(courseCreateRequest.getDescription());
         course.setTitle(courseCreateRequest.getTitle());
