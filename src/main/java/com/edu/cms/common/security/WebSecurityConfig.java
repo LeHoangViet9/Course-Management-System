@@ -34,43 +34,58 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Cụm Auth (Đăng nhập, đăng ký, verify công khai)
-                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/verify", "/api/v1/auth/refresh-token").permitAll()
-                        .requestMatchers("/api/v1/auth/me", "/api/v1/auth/logout").authenticated() // Các tính năng cơ bản cần login
 
-                        // 2. Cụm Quản lý thành viên (Fix khớp với "api/v1/users" không có gạch chéo đầu ở UserController)
-                        .requestMatchers("/api/v1/users", "/api/v1/users/**").hasRole("ADMIN")
+                        // 1. Cụm AUTH & PUBLIC (STT: 1)
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 
-                        // 3. Cụm Báo cáo thống kê (Chỉ dành riêng cho ADMIN)
-                        .requestMatchers("/api/v1/reports/**").hasRole("ADMIN")
+                        // Cụm AUTH chung - Yêu cầu Đăng nhập (STT: 2, 3, 30)
+                        .requestMatchers(HttpMethod.POST, "/api/auth/verify", "/api/auth/logout").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
 
-                        // 4. Cụm Đăng ký khóa học (Enrollments)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/enrollments").hasAnyRole("STUDENT", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/v1/enrollments").hasRole("STUDENT") // Chỉ học viên mới được đăng ký học
-                        .requestMatchers("/api/v1/enrollments/**").hasAnyRole("STUDENT", "ADMIN")
+                        // 2. Cụm USERS (STT: 4, 5, 6, 7, 8, 9, 31)
+                        // Các API quản trị user -> Chỉ ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/{user_id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/{user_id}/role", "/api/users/{user_id}/status").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/{user_id}").hasRole("ADMIN")
+                        // API cập nhật cá nhân / đổi mật khẩu (STT: 26, 27) -> OWNER hoặc ADMIN
+                        // (Dùng @PreAuthorize("@userSecurity.isOwner(authentication, #userId) or hasRole('ADMIN')") ở Controller sẽ tốt hơn, ở đây chặn authenticated trước)
+                        .requestMatchers(HttpMethod.PUT, "/api/users/{user_id}", "/api/users/{user_id}/password").authenticated()
 
-                        // 5. Cụm Đánh giá/Bình luận (Reviews)
-                        // GET list review theo course công khai, các thao tác POST/PUT/DELETE cần auth
-                        .requestMatchers(HttpMethod.GET, "/api/v1/reviews/*/course").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/reviews/*/course").hasRole("STUDENT")
-                        .requestMatchers("/api/v1/reviews/**").authenticated()
+                        // 3. Cụm COURSES (STT: 10, 11, 12, 13, 14, 15, 28, 29, 32)
+                        // Các API lấy dữ liệu khóa học (GET) đều cần AUTH theo bảng yêu cầu
+                        .requestMatchers(HttpMethod.GET, "/api/courses", "/api/courses/**").authenticated()
+                        // Các API thay đổi khóa học (STT: 12, 13, 14, 15) -> Chỉ ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/courses").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/courses/{course_id}", "/api/courses/{course_id}/status").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/courses/{course_id}").hasRole("ADMIN")
 
-                        // 6. Cụm Bài học (Lessons)
-                        // Cho phép xem preview bài học khi đã đăng nhập
-                        .requestMatchers(HttpMethod.GET, "/api/v1/lessons/*/preview").authenticated()
-                        // Các tác vụ quản lý bài học (Thêm, sửa, xóa, publish) thuộc về Giáo viên hoặc Admin
-                        .requestMatchers(HttpMethod.POST, "/api/v1/courses/*/lessons").hasAnyRole("TEACHER", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/lessons/**").hasAnyRole("TEACHER", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/lessons/**").hasAnyRole("TEACHER", "ADMIN")
+                        // 4. Cụm LESSONS (STT: 16, 17, 18, 19, 20, 21, 44)
+                        // Xem bài học (GET) -> Cần AUTH
+                        .requestMatchers(HttpMethod.GET, "/api/courses/{course_id}/lessons", "/api/lessons/{lesson_id}", "/api/lessons/{lesson_id}/content_preview").authenticated()
+                        // Thêm, sửa, xóa bài học -> TEACHER hoặc ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/courses/{course_id}/lessons").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/lessons/{lesson_id}", "/api/lessons/{lesson_id}/publish").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/lessons/{lesson_id}").hasAnyRole("TEACHER", "ADMIN")
 
-                        // 7. Cụm Khóa học (Courses)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/courses", "/api/v1/courses/**").permitAll() // Khách vãng lai xem danh sách/chi tiết
-                        .requestMatchers(HttpMethod.POST, "/api/v1/courses/**").hasAnyRole("TEACHER", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/courses/**").hasAnyRole("TEACHER", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/courses/**").hasAnyRole("TEACHER", "ADMIN")
+                        // 5. Cụm ENROLLMENTS (STT: 22, 23, 24, 25) -> Chỉ STUDENT
+                        .requestMatchers("/api/enrollments", "/api/enrollments/**").hasRole("STUDENT")
 
-                        // 8. Cụm Thông báo (Notifications)
-                        .requestMatchers("/api/v1/notifications/**").authenticated()
+                        // 6. Cụm NOTIFICATIONS (STT: 33, 34, 35, 36)
+                        .requestMatchers(HttpMethod.GET, "/api/notifications").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/notifications/{notification_id}/read").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/notifications").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/notifications/{notification_id}").hasRole("ADMIN")
+
+                        // 7. Cụm REPORTS (STT: 37, 38, 39) -> Chỉ ADMIN
+                        .requestMatchers("/api/reports/**").hasRole("ADMIN")
+
+                        // 8. Cụm REVIEWS (STT: 40, 41, 42, 43)
+                        .requestMatchers(HttpMethod.GET, "/api/courses/{course_id}/reviews").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/courses/{course_id}/reviews").hasRole("STUDENT") // Sinh viên viết review
+                        .requestMatchers(HttpMethod.PUT, "/api/reviews/{review_id}").authenticated() // OWNER_OR_ADMIN xử lý ở tầng Controller
+                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/{review_id}").authenticated()
 
                         // Tất cả các request phát sinh khác bắt buộc phải qua login
                         .anyRequest().authenticated()
